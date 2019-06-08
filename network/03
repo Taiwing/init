@@ -1,0 +1,3 @@
+#use 'networksetup -listnetworkserviceorder' to get the list
+#of network interfaces names
+ifconfig en1 | grep ether | cut -d \  -f2

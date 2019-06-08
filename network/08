@@ -1,0 +1,3 @@
+use 'traceroute' to get the address of the site's server
+then pass it through 'whois'
+and booom: Amazon Technologies Inc. (AT-88-Z)

@@ -1,0 +1,2 @@
+#use 'networksetup -listnetworkserviceorder' to get the ethernet interface
+ipconfig getifaddr en0
