@@ -27,7 +27,7 @@ if [ "$(whoami)" != "root" ]; then
 fi
 
 kill $(pgrep -u $USER) &> /dev/null
-userdel -r $USER &> /dev/null
+userdel -rf $USER &> /dev/null
 
 getent passwd $USER &> /dev/null
 
