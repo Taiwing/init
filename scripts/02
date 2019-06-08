@@ -1,0 +1,29 @@
+#!/bin/bash
+
+USER=$1
+
+if [ -z $USER ]; then
+	echo "Error: no user name provided"
+	exit
+fi
+
+getent passwd $USER &> /dev/null
+
+if [ $? -ne 0 ]; then
+	echo "Error: user '$USER' does not exist"
+	exit
+fi
+
+who | grep $USER &> /dev/null
+
+if [ $? -ne 0 ]; then
+	echo "Error: the '$USER' is not logged in"
+	exit
+fi
+
+if [ "$(whoami)" != "root" ]; then
+	echo "Error: permission denied"
+	exit
+fi
+
+kill $(pgrep -u $USER) &> /dev/null
