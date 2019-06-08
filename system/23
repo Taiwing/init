@@ -1,0 +1,4 @@
+To connect via ssh with the new user, just run 'ssh newuser@ipofguest'
+and enter the password.
+To connect via the graphical session, launch the vm and choose new user
+before entering the password as you would do any user.

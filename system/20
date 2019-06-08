@@ -1,0 +1,1 @@
+echo "DAEMONS:" && sudo systemctl list-unit-files --type=service | grep enabled | cut -d. -f1
