@@ -1,0 +1,70 @@
+#!/bin/bash
+
+############################ set terminal config ###############################
+
+tput ti
+tput vi	#make the cursor disappear
+
+######################### random coordinate generator ##########################
+
+function rand_coord()
+{
+	return $((RANDOM%$1))
+}
+
+########################### get terminal dimensions ############################
+
+tput ho
+tput co > tmp
+read COLS < tmp
+tput li > tmp
+read LINES < tmp
+rm tmp
+echo "Columns: $COLS"
+echo "Lines: $LINES"
+
+############################ set snake variables ###############################
+
+rand_coord $COLS
+CHERRY="$?"
+rand_coord $LINES
+CHERRY="$CHERRY $?"
+echo "CHERRY=$CHERRY"
+INPUT=""
+DIR="DOWN"
+echo "DIRECTION=$DIRECTION"
+LENGTH=1
+rand_coord $COLS
+SNAKE[0]="$?"
+rand_coord $LINES
+SNAKE[0]="${SNAKE[0]} $?"
+echo "SNAKE[0]=${SNAKE[0]}"
+escape_char=$(printf "\u1b")
+
+################################## input loop ##################################
+
+while [ 42 ]; do
+	##get input
+	read -sn1 -t 0.1 INPUT # get 1 character
+	if [ "$INPUT" == "$escape_char" ]; then
+    	read -sn2 -t 0.0001 INPUT # read 2 more chars
+		case $INPUT in
+		    '[A') INPUT="UP" 	;;
+	    	'[B') INPUT="DOWN" 	;;
+		    '[D') INPUT="LEFT" 	;;
+	    	'[C') INPUT="RIGHT"	;;
+		esac
+	elif [ "$INPUT" == "q" ]; then
+		echo "quitting..."
+		sleep 1
+		break
+	fi
+	if [ "$INPUT" ]; then
+		echo "input: $INPUT"
+	fi
+done
+
+######################### unset custom terminal config #########################
+
+tput ve #make the cursor reappear
+tput te
