@@ -91,7 +91,7 @@ while [ 42 ]; do
 
 	##print snake
 	tputxy "*" "$S_X" "$S_Y"
-	sleep 0.3
+#	sleep 0.3
 done
 
 ######################### unset custom terminal config #########################

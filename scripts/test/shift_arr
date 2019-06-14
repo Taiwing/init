@@ -1,0 +1,17 @@
+#!/bin/bash
+
+function shift_arr()
+{
+	unset $1[0]
+}
+
+LOL[0]="ksfjlsGARBAGElksjflksjf"
+LOL[1]="GOODSTUFF"
+LOL[2]="EVENMOARGOODSTUFF"
+LOL[3]="NOWTHISISKINDABAD"
+
+echo "before shift:"
+echo ${LOL[*]}
+shift_arr LOL
+echo "after:"
+echo ${LOL[*]}
