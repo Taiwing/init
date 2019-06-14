@@ -16,11 +16,13 @@ function exit_snake()
 	exit 1
 }
 
-SIG=0
-while [ $SIG -lt 30 ]; do
-	trap "exit_snake" $SIG
-	((SIG++))
-done
+
+# TODO: uncomment this when the script is finished
+#SIG=0
+#while [ $SIG -lt 30 ]; do
+#	trap "exit_snake" $SIG
+#	((SIG++))
+#done
 
 
 ######################### random coordinate generator ##########################
@@ -82,20 +84,21 @@ UP=-2
 DOWN=-1
 LEFT=1
 RIGHT=2
-DIR=0	#set dir manually as first input
-OLDIR=$DIR
+DIR=0
 
+HEAD=0
+TAIL=0
 declare -a SNAKE
 rand_coord $COLS
 SNAKE+=("$?")
 rand_coord $LINES
-SNAKE[0]="${SNAKE[0]} $?"
-SNAKE_TAIL="${SNAKE[0]}"
-echo "SNAKE[0]=${SNAKE[0]}"
+SNAKE[$HEAD]="${SNAKE[$HEAD]} $?"
 LENGTH=1
+echo "SNAKE[$HEAD]=${SNAKE[$HEAD]}"
+ADD_BLOCKS=0
 
-CHERRY="${SNAKE[0]}"
-while [ "$CHERRY" == "${SNAKE[0]}" ]; do
+CHERRY="${SNAKE[$HEAD]}"
+while [ "$CHERRY" == "${SNAKE[$HEAD]}" ]; do
 	rand_coord $COLS
 	CHERRY="$?"
 	rand_coord $LINES
@@ -105,7 +108,7 @@ echo "CHERRY=$CHERRY"
 
 ################################# initiate game ################################
 
-tputxy "#" ${SNAKE[0]}
+tputxy "#" ${SNAKE[$HEAD]}
 tputxy "*" $CHERRY
 
 INPUT=""
@@ -150,13 +153,28 @@ while [ 42 ]; do
 	fi
 
 	##move snake
-	SNAKE[0]=$(move_block "${SNAKE[0]}" $DIR)
-	tputxy "SNAKE[0]=${SNAKE[0]}" 0 0 #DEBUG
+	NEW_POS=$(move_block "${SNAKE[$HEAD]}" $DIR)
+	tputxy "SNAKE[$HEAD]=$NEW_POS" 0 0 #DEBUG
+	if [ "$NEW_POS" == "$CHERRY" ]; then # check if the snake is on the cherry
+		ADD_BLOCKS=4
+		# TODO: re-generate the CHERRY coordinates while it collides with the snake
+		rand_coord $COLS
+		CHERRY="$?"
+		rand_coord $LINES
+		CHERRY="$CHERRY $?"
+		tputxy "*" $CHERRY
+	fi
+	if [ $ADD_BLOCKS -gt 0 ]; then
+#		if [ $LENGTH -eq 1 -o $DIR -ne $OLDIR ]; then
+			
+#		fi
+		((ADD_BLOCKS--))
+	fi
 
 	##print snake
-	tputxy " " $SNAKE_TAIL
-	tputxy "#" ${SNAKE[0]}
-	SNAKE_TAIL="${SNAKE[0]}"
+	tputxy " " ${SNAKE[$TAIL]}
+	SNAKE[0]=$NEW_POS
+	tputxy "#" ${SNAKE[$HEAD]}
 done
 
 ######################### unset custom terminal config #########################
