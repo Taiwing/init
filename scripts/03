@@ -35,6 +35,34 @@ function tputxy()
 	echo -en "\e[${3};${2}H${1}"
 }
 
+################################## move_block ##################################
+
+function move_block() 
+{
+	local BLOCK="$1"
+	local DIRECTION=$2
+	local S_X=$(echo $BLOCK | cut -d\  -f1)
+	local S_Y=$(echo $BLOCK | cut -d\  -f2)
+	case $DIRECTION in
+		$UP)	((S_Y--));;
+		$DOWN)	((S_Y++));;
+		$LEFT)	((S_X--));;
+		$RIGHT)	((S_X++));;
+	esac
+	echo "$S_X $S_Y"
+}
+
+################################# collide_test #################################
+
+function collide_test()
+{
+	local SNAKE=$1
+	local X=$2
+	local Y=$3
+
+	#compare the snake coordinates to X and Y
+}
+
 ########################### get terminal dimensions ############################
 
 tput clear
@@ -46,36 +74,48 @@ rm tmp
 echo "Columns: $COLS"
 echo "Lines: $LINES"
 
-################################# set screen ###################################
+############################# set game variables ###############################
 
-i=0
-SCREEN_SIZE=$((COLS*LINES))
-declare -a SNAKE_SCREEN
-while [ $i -lt $SCREEN_SIZE ]; do
-	SNAKE_SCREEN+=(0)
-	((i++))
-done
+UP=-2
+DOWN=-1
+LEFT=1
+RIGHT=2
+DIR=0	#set dir manually as first input
+OLDIR=$DIR
 
-############################ set snake variables ###############################
+declare -a SNAKE
+rand_coord $COLS
+SNAKE+=("$?")
+rand_coord $LINES
+SNAKE[0]="${SNAKE[0]} $?"
+SNAKE_TAIL="${SNAKE[0]}"
+echo "SNAKE[0]=${SNAKE[0]}"
+LENGTH=1
 
+#TODO: re-generate the CHERRY coordinates while they are equal to SNAKE[0]
 rand_coord $COLS
 CHERRY="$?"
 rand_coord $LINES
 CHERRY="$CHERRY $?"
 echo "CHERRY=$CHERRY"
+
+################################# initiate game ################################
+
+tputxy "#" ${SNAKE[0]}
+tputxy "*" $CHERRY
+
 INPUT=""
-UP=-2
-DOWN=-1
-LEFT=1
-RIGHT=2
-DIR=$DOWN
-LENGTH=1
-rand_coord $COLS
-SNAKE[0]="$?"
-rand_coord $LINES
-SNAKE[0]="${SNAKE[0]} $?"
-echo "SNAKE[0]=${SNAKE[0]}"
 escape_char=$(printf "\u1b")
+while [ $DIR -eq 0 ]; do
+	read -sn3 INPUT # get 3 charaters
+	case $INPUT in
+		"$escape_char[A") DIR=$UP 		;;
+		"$escape_char[B") DIR=$DOWN 	;;
+		"$escape_char[D") DIR=$LEFT 	;;
+		"$escape_char[C") DIR=$RIGHT	;;
+	esac
+done
+OLDIR=$DIR
 
 ################################## input loop ##################################
 
@@ -98,6 +138,7 @@ while [ 42 ]; do
 	fi
 
 	##set direction
+	OLDIR=$DIR
 	if [ $DIR -lt 0 -a $DIR_INPUT -gt 0 ]; then
 		DIR=$DIR_INPUT
 	elif [ $DIR -gt 0 -a $DIR_INPUT -lt 0 ]; then
@@ -105,20 +146,13 @@ while [ 42 ]; do
 	fi
 
 	##move snake
-#	echo "SNAKE[0]=${SNAKE[0]}" #DEBUG
-	S_X=$(echo ${SNAKE[0]} | cut -d\  -f1)
-	S_Y=$(echo ${SNAKE[0]} | cut -d\  -f2)
-	case $DIR in
-		$UP) ((S_Y--));;
-		$DOWN) ((S_Y++));;
-		$LEFT) ((S_X--));;
-		$RIGHT) ((S_X++));;
-	esac
-	SNAKE[0]="$S_X $S_Y"
+	SNAKE[0]=$(move_block "${SNAKE[0]}" $DIR)
+	tputxy "SNAKE[0]=${SNAKE[0]}" 0 0 #DEBUG
 
 	##print snake
-	tputxy "*" "$S_X" "$S_Y"
-#	sleep 0.3
+	tputxy " " $SNAKE_TAIL
+	tputxy "#" ${SNAKE[0]}
+	SNAKE_TAIL="${SNAKE[0]}"
 done
 
 ######################### unset custom terminal config #########################
