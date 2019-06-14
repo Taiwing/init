@@ -2,7 +2,8 @@
 
 ############################ set terminal config ###############################
 
-setterm -cursor off	#make the cursor disappear
+setterm -cursor off	# make the cursor disappear
+stty -echo # make input characters desappear
 
 ############################# signal handling ##################################
 
@@ -11,6 +12,7 @@ function exit_snake()
 	tput clear
 	echo "snake: exiting..."
 	setterm -cursor on
+	stty echo
 	exit 1
 }
 
@@ -92,11 +94,13 @@ SNAKE_TAIL="${SNAKE[0]}"
 echo "SNAKE[0]=${SNAKE[0]}"
 LENGTH=1
 
-#TODO: re-generate the CHERRY coordinates while they are equal to SNAKE[0]
-rand_coord $COLS
-CHERRY="$?"
-rand_coord $LINES
-CHERRY="$CHERRY $?"
+CHERRY="${SNAKE[0]}"
+while [ "$CHERRY" == "${SNAKE[0]}" ]; do
+	rand_coord $COLS
+	CHERRY="$?"
+	rand_coord $LINES
+	CHERRY="$CHERRY $?"
+done
 echo "CHERRY=$CHERRY"
 
 ################################# initiate game ################################
@@ -158,3 +162,4 @@ done
 ######################### unset custom terminal config #########################
 
 setterm -cursor on	#make the cursor reappear
+stty echo #make input characters reappear
