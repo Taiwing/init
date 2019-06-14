@@ -198,7 +198,7 @@ while [ 42 ]; do
 	fi
 
 	##move snake
-	NEW_HEAD="$(move_block "${SNAKE[$HEAD]}" $DIR)"
+	NEW_HEAD=$(move_block "${SNAKE[$HEAD]}" $DIR)
 	OLD_TAIL="${SNAKE[$TAIL]}"
 	tputxy "SNAKE[HEAD]=$NEW_HEAD" 0 7 #DEBUG
 	tputxy "SNAKE[TAIL]=$NEW_HEAD" 0 8 #DEBUG
