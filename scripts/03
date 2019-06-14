@@ -4,6 +4,23 @@
 
 setterm -cursor off	#make the cursor disappear
 
+############################# signal handling ##################################
+
+function exit_snake()
+{
+	tput clear
+	echo "snake: exiting..."
+	setterm -cursor on
+	exit 1
+}
+
+SIG=0
+while [ $SIG -lt 30 ]; do
+	trap "exit_snake" $SIG
+	((SIG++))
+done
+
+
 ######################### random coordinate generator ##########################
 
 function rand_coord()

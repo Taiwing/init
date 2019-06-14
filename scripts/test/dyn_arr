@@ -1,0 +1,15 @@
+#!/bin/bash
+
+width=$1
+height=$2
+declare -a arr
+i=0
+size=$((width*height))
+while [ $i -lt $size ]; do
+	arr+=($i)
+	((i++))
+done
+
+echo "length of 'arr': ${#arr[@]}"
+echo "content:"
+echo "${arr[@]}"
