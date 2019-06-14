@@ -1,39 +1,99 @@
 #!/bin/bash
 
-ping -q -c 1 server_ip_address > /dev/null
-DOWN=$?
+############################ set terminal config ###############################
 
-if [ $DOWN -gt 0 ]
-then
-	echo "server is down"
-fi
+setterm -cursor off	#make the cursor disappear
 
-cd /path/of/directory/to/save/
-git add *
-git commit -an -m `date "+%y%m%d_backup"`
-git push -u origin master
+######################### random coordinate generator ##########################
 
-if [ $DOWN -gt 0 ]
-then
-	echo "booting server..."
-	sudo etherwake -i ethernet_interface server_mac_address
-	for i in {0..21}
-	do
-		echo "trying to reach server... ["$i"]"
-		ping -q -c 1 server_ip_address > /dev/null
-		if [ $? -eq 0 ]
-		then
-			echo "success !"
-			break
-		fi
-	done
-fi
+function rand_coord()
+{
+	return $((RANDOM%$1))
+}
 
-rsync -e 'ssh -p 22' -avz --delete /path/of/directory/to/save/ user@example.com:/path/of/backup/folder/
-rsync -e 'ssh -p 22' -avz --delete /path/of/an/other/directory/to/save/ user@example.com:/path/of/backup/folder/
-ssh -n user@example.com rsync -avz --delete /path/of/backup/folder/ /path/of/second/backup/folder/
+################################### tmove ######################################
 
-if [ $DOWN -gt 0 ]
-then
-	ssh -n user@server_ip_address shutdown now
-fi
+function tputxy()
+{
+	echo -en "\e[${3};${2}H${1}"
+}
+
+########################### get terminal dimensions ############################
+
+tput clear
+tput cols > tmp
+read COLS < tmp
+tput lines > tmp
+read LINES < tmp
+rm tmp
+echo "Columns: $COLS"
+echo "Lines: $LINES"
+
+############################ set snake variables ###############################
+
+rand_coord $COLS
+CHERRY="$?"
+rand_coord $LINES
+CHERRY="$CHERRY $?"
+echo "CHERRY=$CHERRY"
+INPUT=""
+UP=-2
+DOWN=-1
+LEFT=1
+RIGHT=2
+DIR=$DOWN
+LENGTH=1
+rand_coord $COLS
+SNAKE[0]="$?"
+rand_coord $LINES
+SNAKE[0]="${SNAKE[0]} $?"
+echo "SNAKE[0]=${SNAKE[0]}"
+escape_char=$(printf "\u1b")
+
+################################## input loop ##################################
+
+while [ 42 ]; do
+	##get input
+	DIR_INPUT=$DIR
+	read -sn1 -t 0.1 INPUT # get 1 character
+	if [ "$INPUT" == "$escape_char" ]; then
+    	read -sn2 -t 0.0001 INPUT # read 2 more chars
+		case $INPUT in
+			'[A') DIR_INPUT=$UP 	;;
+			'[B') DIR_INPUT=$DOWN 	;;
+			'[D') DIR_INPUT=$LEFT 	;;
+			'[C') DIR_INPUT=$RIGHT	;;
+		esac
+	elif [ "$INPUT" == "q" ]; then
+		echo "quitting..."
+		sleep 1
+		break
+	fi
+
+	##set direction
+	if [ $DIR -lt 0 -a $DIR_INPUT -gt 0 ]; then
+		DIR=$DIR_INPUT
+	elif [ $DIR -gt 0 -a $DIR_INPUT -lt 0 ]; then
+		DIR=$DIR_INPUT
+	fi
+
+	##move snake
+#	echo "SNAKE[0]=${SNAKE[0]}" #DEBUG
+	S_X=$(echo ${SNAKE[0]} | cut -d\  -f1)
+	S_Y=$(echo ${SNAKE[0]} | cut -d\  -f2)
+	case $DIR in
+		$UP) ((S_Y--));;
+		$DOWN) ((S_Y++));;
+		$LEFT) ((S_X--));;
+		$RIGHT) ((S_X++));;
+	esac
+	SNAKE[0]="$S_X $S_Y"
+
+	##print snake
+	tputxy "*" "$S_X" "$S_Y"
+	sleep 0.3
+done
+
+######################### unset custom terminal config #########################
+
+setterm -cursor on	#make the cursor reappear
