@@ -231,7 +231,11 @@ while [ 42 ]; do
 				SNAKE[$TAIL]="$NEW_TAIL"
 			fi
 		fi
-		SNAKE[$HEAD]="$NEW_HEAD"
+		if [ $DIR -ne $OLDIR ]; then
+			SNAKE+=("$NEW_HEAD")
+		else
+			SNAKE[$HEAD]="$NEW_HEAD"
+		fi
 	fi
 
 	##print snake
@@ -239,6 +243,16 @@ while [ 42 ]; do
 		tputxy " " $OLD_TAIL
 	fi
 	tputxy "#" $NEW_HEAD
+
+	#DEBUG
+	tputxy "LENGTH=$LENGTH" 0 10 #DEBUG
+	i=0
+	while [ $i -lt ${#SNAKE[@]} ]; do
+		j=$((i+11))
+		tputxy "SNAKE[$i]=${SNAKE[$i]}" 0 $j
+		((i++))
+	done
+	#DEBUG
 done
 
 ######################### unset custom terminal config #########################
