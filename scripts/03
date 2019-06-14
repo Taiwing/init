@@ -46,6 +46,16 @@ rm tmp
 echo "Columns: $COLS"
 echo "Lines: $LINES"
 
+################################# set screen ###################################
+
+i=0
+SCREEN_SIZE=$((COLS*LINES))
+declare -a SNAKE_SCREEN
+while [ $i -lt $SCREEN_SIZE ]; do
+	SNAKE_SCREEN+=(0)
+	((i++))
+done
+
 ############################ set snake variables ###############################
 
 rand_coord $COLS
