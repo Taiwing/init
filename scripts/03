@@ -36,7 +36,12 @@ function rand_coord()
 
 function tputxy()
 {
-	echo -en "\e[${3};${2}H${1}"
+	local Y=$3
+	local X=$2
+	((Y++))
+	((X++))
+	echo -en "\e[${Y};${X}H${1}"
+	tput ho
 }
 
 ################################## move_block ##################################
@@ -54,6 +59,46 @@ function move_block()
 		$RIGHT)	((S_X++));;
 	esac
 	echo "$S_X $S_Y"
+}
+
+################################## update_tail #################################
+
+function update_tail()
+{
+	local TAIL_X=$(echo $1 | cut -d\  -f1)
+	local TAIL_Y=$(echo $1 | cut -d\  -f2)
+	local NEXT_X=$(echo $2 | cut -d\  -f1)
+	local NEXT_Y=$(echo $2 | cut -d\  -f2)
+	local DIFF_X=$((NEXT_X-TAIL_X))
+	local DIFF_Y=$((NEXT_Y-TAIL_Y))
+
+	if [ $DIFF_X -eq 0 ]; then
+		if [ $DIFF_Y -gt 1 ];then
+			local Y=$((TAIL_Y+1))
+			echo "$TAIL_X $Y"
+			return 0
+		elif [ $DIFF_Y -lt -1 ]; then
+			local Y=$((TAIL_Y-1))
+			echo "$TAIL_X $Y"
+			return 0
+		else
+			echo "$1"
+			return 1
+		fi
+	elif [ $DIFF_Y -eq 0 ]; then
+		if [ $DIFF_X -gt 1 ];then
+			local X=$((TAIL_X+1))
+			echo "$X $TAIL_Y"
+			return 0
+		elif [ $DIFF_X -lt -1 ]; then
+			local X=$((TAIL_X-1))
+			echo "$X $TAIL_Y"
+			return 0
+		else
+			echo "$1"
+			return 1
+		fi
+	fi
 }
 
 ################################# collide_test #################################
@@ -75,8 +120,8 @@ read COLS < tmp
 tput lines > tmp
 read LINES < tmp
 rm tmp
-echo "Columns: $COLS"
-echo "Lines: $LINES"
+#echo "Columns: $COLS" #DEBUG
+#echo "Lines: $LINES" #DEBUG
 
 ############################# set game variables ###############################
 
@@ -86,7 +131,7 @@ LEFT=1
 RIGHT=2
 DIR=0
 
-HEAD=0
+HEAD=-1
 TAIL=0
 declare -a SNAKE
 rand_coord $COLS
@@ -94,7 +139,7 @@ SNAKE+=("$?")
 rand_coord $LINES
 SNAKE[$HEAD]="${SNAKE[$HEAD]} $?"
 LENGTH=1
-echo "SNAKE[$HEAD]=${SNAKE[$HEAD]}"
+#echo "SNAKE[$HEAD]=${SNAKE[$HEAD]}" #DEBUG
 ADD_BLOCKS=0
 
 CHERRY="${SNAKE[$HEAD]}"
@@ -104,7 +149,7 @@ while [ "$CHERRY" == "${SNAKE[$HEAD]}" ]; do
 	rand_coord $LINES
 	CHERRY="$CHERRY $?"
 done
-echo "CHERRY=$CHERRY"
+#echo "CHERRY=$CHERRY" #DEBUG
 
 ################################# initiate game ################################
 
@@ -153,28 +198,47 @@ while [ 42 ]; do
 	fi
 
 	##move snake
-	NEW_POS=$(move_block "${SNAKE[$HEAD]}" $DIR)
-	tputxy "SNAKE[$HEAD]=$NEW_POS" 0 0 #DEBUG
-	if [ "$NEW_POS" == "$CHERRY" ]; then # check if the snake is on the cherry
+	NEW_HEAD="$(move_block "${SNAKE[$HEAD]}" $DIR)"
+	OLD_TAIL="${SNAKE[$TAIL]}"
+	tputxy "SNAKE[HEAD]=$NEW_HEAD" 0 7 #DEBUG
+	tputxy "SNAKE[TAIL]=$NEW_HEAD" 0 8 #DEBUG
+	if [ "$NEW_HEAD" == "$CHERRY" ]; then # check if the snake is on the cherry
 		ADD_BLOCKS=4
 		# TODO: re-generate the CHERRY coordinates while it collides with the snake
 		rand_coord $COLS
 		CHERRY="$?"
 		rand_coord $LINES
 		CHERRY="$CHERRY $?"
+		tputxy "CHERRY=$CHERRY" 0 9 #DEBUG
 		tputxy "*" $CHERRY
 	fi
 	if [ $ADD_BLOCKS -gt 0 ]; then
-#		if [ $LENGTH -eq 1 -o $DIR -ne $OLDIR ]; then
-			
-#		fi
+		if [ $LENGTH -eq 1 -o $DIR -ne $OLDIR ]; then
+			SNAKE+=("$NEW_HEAD")
+		else
+			SNAKE[$HEAD]="$NEW_HEAD"
+		fi
+		((LENGTH++))
 		((ADD_BLOCKS--))
+		OLD_TAIL=""
+	else
+		if [ $LENGTH -gt 1 ]; then
+			# move the tail
+			NEW_TAIL=$(update_tail ${SNAKE[*]})
+			if [ $? -ne 0 ]; then
+				unset SNAKE[$TAIL]
+			else
+				SNAKE[$TAIL]="$NEW_TAIL"
+			fi
+		fi
+		SNAKE[$HEAD]="$NEW_HEAD"
 	fi
 
 	##print snake
-	tputxy " " ${SNAKE[$TAIL]}
-	SNAKE[0]=$NEW_POS
-	tputxy "#" ${SNAKE[$HEAD]}
+	if [ "$OLD_TAIL" != "" ]; then
+		tputxy " " $OLD_TAIL
+	fi
+	tputxy "#" $NEW_HEAD
 done
 
 ######################### unset custom terminal config #########################
