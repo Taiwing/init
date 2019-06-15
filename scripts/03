@@ -128,18 +128,18 @@ function collide_test()
 			P_Y=$(echo $PREV | cut -d\  -f2)
 			if [ $X == $C_X -a $C_X == $P_X ]; then
 				if [ $C_Y -lt $P_Y ] && \
-				[ $Y -gt $C_Y -a $Y -lt $P_Y ]; then
+				(( Y >= C_Y && Y <= P_Y )); then
 					return 1;
-				elif [ $C_Y -gt $P_Y ] && \
-				[ $Y -lt $C_Y -a $Y -gt $P_Y ]; then
+				elif [ $P_Y -lt $C_Y ] && \
+				(( Y >= P_Y && Y <= C_Y )); then
 					return 1;
 				fi
 			elif [ $Y == $C_Y -a $C_Y == $P_Y ]; then
 				if [ $C_X -lt $P_X ] && \
-				[ $X -gt $C_X -a $Y -lt $P_Y ]; then
+				(( X >= C_X && X <= P_X )); then
 					return 1;
-				elif [ $C_X -gt $P_X ] && \
-				[ $X -lt $C_X -a $X -gt $P_X ]; then
+				elif [ $P_X -lt $C_X ] && \
+				(( X >= P_X && X <= C_X )); then
 					return 1;
 				fi
 			fi
@@ -246,25 +246,9 @@ while [ 42 ]; do
 		DIR=$DIR_INPUT
 	fi
 
-	##move snake head and check collision with itself
+	##move snake and check CHERRY position
+	OLD_HEAD="${SNAKE[$HEAD]}"
 	NEW_HEAD=$(move_head "${SNAKE[$HEAD]}" $DIR)
-	collide_test "$NEW_HEAD" ${SNAKE[*]:1}
-	if [ $? -ne 0 ]; then
-		SCORE=$(printf "%07d" $LENGTH)
-		tputxy "                    " $((COLS/2-10)) $((LINES/2-2))
-		tputxy "     GAME OVER      " $((COLS/2-10)) $((LINES/2-1))
-		tputxy "                    " $((COLS/2-10)) $((LINES/2))
-		tputxy "   Score: $SCORE   " $((COLS/2-10)) $((LINES/2+1))
-		tputxy "                    " $((COLS/2-10)) $((LINES/2+2))
-		tputxy " press 'q' to leave " $((COLS/2-10)) $((LINES/2+3))
-		tputxy "                     \n" $((COLS/2-10)) $((LINES/2+4))
-		while [ "$INPUT" != "q" ]; do
-			read -sn1 INPUT
-		done
-		break
-	fi
-
-	##check CHERRY position
 	if [ "$NEW_HEAD" == "$CHERRY" ]; then
 		((ADD_BLOCKS+=4))
 		COLLIDE=1
@@ -273,7 +257,7 @@ while [ 42 ]; do
 			CHERRY="$?"
 			rand_coord $LINES
 			CHERRY="${CHERRY}_${?}"
-			collide_test "$CHERRY" ${SNAKE[*]:1} "$NEW_HEAD"
+			collide_test "$CHERRY" ${SNAKE[*]} "$NEW_HEAD"
 			COLLIDE=$?
 		done
 		tputxy "*" $(getxy $CHERRY)
@@ -311,6 +295,23 @@ while [ 42 ]; do
 				SNAKE[$TAIL]="$NEW_TAIL"
 			fi
 		fi
+	fi
+	
+	##check snake collision with itself
+	collide_test "$NEW_HEAD" ${SNAKE[*]:0:$HEAD} "$OLD_HEAD"
+	if [ $? -ne 0 ]; then
+		SCORE=$(printf "%07d" $LENGTH)
+		tputxy "                    " $((COLS/2-10)) $((LINES/2-2))
+		tputxy "     GAME OVER      " $((COLS/2-10)) $((LINES/2-1))
+		tputxy "                    " $((COLS/2-10)) $((LINES/2))
+		tputxy "   Score: $SCORE   " $((COLS/2-10)) $((LINES/2+1))
+		tputxy "                    " $((COLS/2-10)) $((LINES/2+2))
+		tputxy " press 'q' to leave " $((COLS/2-10)) $((LINES/2+3))
+		tputxy "                     \n" $((COLS/2-10)) $((LINES/2+4))
+		while [ "$INPUT" != "q" ]; do
+			read -sn1 INPUT
+		done
+		break
 	fi
 
 	##print snake
