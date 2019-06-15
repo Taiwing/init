@@ -41,7 +41,7 @@ function tputxy()
 	((Y++))
 	((X++))
 	echo -en "\e[${Y};${X}H${1}"
-	tput ho
+	echo -en "\e[1;1H"
 }
 
 ################################## move_block ##################################
@@ -65,38 +65,42 @@ function move_block()
 
 function update_tail()
 {
-	local TAIL_X=$(echo $1 | cut -d\  -f1)
-	local TAIL_Y=$(echo $1 | cut -d\  -f2)
-	local NEXT_X=$(echo $2 | cut -d\  -f1)
-	local NEXT_Y=$(echo $2 | cut -d\  -f2)
+#	local TAIL_X=$(echo $1 | cut -d\  -f1)
+	local TAIL_X=$1
+	echo "TAIL_X=$TAIL_X" >> update_tail_out #DEBUG
+#	local TAIL_Y=$(echo $1 | cut -d\  -f2)
+	local TAIL_Y=$2
+	echo "TAIL_Y=$TAIL_Y" >> update_tail_out #DEBUG
+#	local NEXT_X=$(echo $2 | cut -d\  -f1)
+	local NEXT_X=$3
+	echo "NEXT_X=$NEXT_X" >> update_tail_out #DEBUG
+#	local NEXT_Y=$(echo $2 | cut -d\  -f2)
+	local NEXT_Y=$4
+	echo "NEXT_Y=$NEXT_Y" >> update_tail_out  #DEBUG
 	local DIFF_X=$((NEXT_X-TAIL_X))
+	echo "DIFF_X=$DIFF_X" >> update_tail_out #DEBUG
 	local DIFF_Y=$((NEXT_Y-TAIL_Y))
+	echo "DIFF_Y=$DIFF_Y\n" >> update_tail_out #DEBUG
 
 	if [ $DIFF_X -eq 0 ]; then
-		if [ $DIFF_Y -gt 1 ];then
+		if [ $DIFF_Y -gt 1 ]; then
 			local Y=$((TAIL_Y+1))
 			echo "$TAIL_X $Y"
-			return 0
 		elif [ $DIFF_Y -lt -1 ]; then
 			local Y=$((TAIL_Y-1))
 			echo "$TAIL_X $Y"
-			return 0
 		else
-			echo "$1"
-			return 1
+			echo ""
 		fi
 	elif [ $DIFF_Y -eq 0 ]; then
 		if [ $DIFF_X -gt 1 ];then
 			local X=$((TAIL_X+1))
 			echo "$X $TAIL_Y"
-			return 0
 		elif [ $DIFF_X -lt -1 ]; then
 			local X=$((TAIL_X-1))
 			echo "$X $TAIL_Y"
-			return 0
 		else
-			echo "$1"
-			return 1
+			echo ""
 		fi
 	fi
 }
@@ -187,6 +191,14 @@ while [ 42 ]; do
 		echo "quitting..."
 		sleep 1
 		break
+	elif [ "$INPUT" == "p" ]; then
+		P_X=$((COLS/2))
+		((P_X-=2))
+		tputxy "PAUSE" $P_X 0
+		INPUT=""
+		while [ "$INPUT" != "p" ]; do
+			read -sn1 INPUT
+		done
 	fi
 
 	##set direction
@@ -225,7 +237,8 @@ while [ 42 ]; do
 		if [ $LENGTH -gt 1 ]; then
 			# move the tail
 			NEW_TAIL=$(update_tail ${SNAKE[*]})
-			if [ $? -ne 0 ]; then
+			tputxy "NEW_TAIL=$NEW_TAIL" 0 0
+			if [ "$NEW_TAIL" == "" ]; then
 				unset SNAKE[$TAIL]
 			else
 				SNAKE[$TAIL]="$NEW_TAIL"
@@ -245,7 +258,7 @@ while [ 42 ]; do
 	tputxy "#" $NEW_HEAD
 
 	#DEBUG
-	tputxy "LENGTH=$LENGTH" 0 10 #DEBUG
+	tputxy "LENGTH=$LENGTH" 0 10
 	i=0
 	while [ $i -lt ${#SNAKE[@]} ]; do
 		j=$((i+11))
