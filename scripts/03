@@ -24,6 +24,14 @@ function exit_snake()
 #	((SIG++))
 #done
 
+################################### utils ######################################
+
+function getxy()
+{
+	local X=$(echo $1 | cut -d_ -f1)
+	local Y=$(echo $1 | cut -d_ -f2)
+	echo "$X $Y"
+}
 
 ######################### random coordinate generator ##########################
 
@@ -41,7 +49,6 @@ function tputxy()
 	((Y++))
 	((X++))
 	echo -en "\033[${Y};${X}H${1}"
-	echo -en "\033[1;1H"
 }
 
 ################################### move_head ##################################
@@ -50,28 +57,63 @@ function move_head()
 {
 	local HEAD="$1"
 	local DIRECTION=$2
-	local S_X=$(echo $HEAD | cut -d\  -f1)
-	local S_Y=$(echo $HEAD | cut -d\  -f2)
+	local S_X=$(echo $HEAD | cut -d_ -f1)
+	local S_Y=$(echo $HEAD | cut -d_ -f2)
 	case $DIRECTION in
 		$UP)	((S_Y--));;
 		$DOWN)	((S_Y++));;
 		$LEFT)	((S_X--));;
 		$RIGHT)	((S_X++));;
 	esac
-	echo "$S_X $S_Y"
+	echo "${S_X}_${S_Y}"
 }
 
 ################################## move_tail ###################################
 
-#function move_tail()
-#{
+function move_tail()
+{
 	#get current tail
+	local TAIL_X=$(echo $1 | cut -d_ -f1)
+	local TAIL_Y=$(echo $1 | cut -d_ -f2)
+	echo "SNAKE[TAIL]=$1" >> debug
+	echo "TAIL_X=${TAIL_X}" >> debug
+	echo "TAIL_Y=${TAIL_Y}" >> debug
 	#get next block
+	local NEXT_X=$(echo $2 | cut -d_ -f1)
+	local NEXT_Y=$(echo $2 | cut -d_ -f2)
+	echo "SNAKE[TAIL+1]=$2" >> debug
+	echo "NEXT_X=${NEXT_X}" >> debug
+	echo "NEXT_Y=${NEXT_Y}" >> debug
+
+	#get the direction
+	local DIFF_X=$((NEXT_X-TAIL_X))
+	local DIFF_Y=$((NEXT_Y-TAIL_Y))
+	echo "DIFF_X=${DIFF_X}" >> debug
+	echo "DIFF_Y=${DIFF_Y}" >> debug
+	if [ $DIFF_X -eq 0 ]; then
+		Y=$TAIL_Y
+		if [ $DIFF_Y -lt 0 ]; then
+			((Y--))
+		elif [ $DIFF_Y -gt 0 ]; then
+			((Y++))
+		fi
+		echo "${TAIL_X}_${Y}"
+		echo "NEW_TAIL=${TAIL_X}_${Y}" >> debug
+	elif [ $DIFF_Y -eq 0 ]; then
+		X=$TAIL_X
+		if [ $DIFF_X -lt 0 ]; then
+			((X--))
+		elif [ $DIFF_X -gt 0 ]; then
+			((X++))
+		fi
+		echo "${X}_${TAIL_Y}"
+		echo "NEW_TAIL=${X}_${TAIL_Y}" >> debug
+	fi
 	#return new coordinates for current tail
 
 	#outside of this, if they are the same as the next block
 	#just delete the old tail
-#}
+}
 
 ################################# collide_test #################################
 
@@ -99,11 +141,12 @@ DIR=0
 
 HEAD=0
 TAIL=0
+NEXT=1
 declare -a SNAKE
 rand_coord $COLS
 SNAKE+=("$?")
 rand_coord $LINES
-SNAKE[$HEAD]="${SNAKE[$HEAD]} $?"
+SNAKE[$HEAD]="${SNAKE[$HEAD]}_${?}"
 LENGTH=1
 ADD_BLOCKS=0
 
@@ -112,13 +155,13 @@ while [ "$CHERRY" == "${SNAKE[$HEAD]}" ]; do
 	rand_coord $COLS
 	CHERRY="$?"
 	rand_coord $LINES
-	CHERRY="$CHERRY $?"
+	CHERRY="${CHERRY}_${?}"
 done
 
 ################################# initiate game ################################
 
-tputxy "#" ${SNAKE[$HEAD]}
-tputxy "*" $CHERRY
+tputxy "#" $(getxy ${SNAKE[$HEAD]})
+tputxy "*" $(getxy $CHERRY)
 
 INPUT=""
 escape_char=$(printf "\033")
@@ -179,8 +222,8 @@ while [ 42 ]; do
 		rand_coord $COLS
 		CHERRY="$?"
 		rand_coord $LINES
-		CHERRY="$CHERRY $?"
-		tputxy "*" $CHERRY
+		CHERRY="${CHERRY}_${?}"
+		tputxy "*" $(getxy $CHERRY)
 	fi
 	if [ $ADD_BLOCKS -ne 0 ]; then
 		if [ $HEAD -eq $TAIL -o $DIR -ne $OLDIR ]; then
@@ -192,14 +235,64 @@ while [ 42 ]; do
 		((ADD_BLOCKS--))
 		((LENGTH++))
 		OLD_TAIL=""
+	else
+		if [ $DIR -ne $OLDIR ]; then
+			SNAKE+=("$NEW_HEAD")
+				echo "After +=:" >> debug
+				i=0
+				while [ $i -lt ${#SNAKE[*]} ]; do
+					echo "[$i]=${SNAKE[$i]}" >> debug
+					((i++))
+				done
+			((HEAD++))
+		else
+			SNAKE[$HEAD]="$NEW_HEAD"
+		fi
+		if [ $HEAD -ne $TAIL ]; then
+			NEW_TAIL=$(move_tail "${SNAKE[$TAIL]}" \
+				"${SNAKE[$NEXT]}")
+			tputxy "                             \n" 0 4 #DEBUG
+			tputxy "NEW_TAIL='$NEW_TAIL'" 0 4 #DEBUG
+			if [ "$NEW_TAIL" == "${SNAKE[$NEXT]}" ]; then
+				echo "Before:" >> debug
+				i=0
+				while [ $i -lt ${#SNAKE[*]} ]; do
+					echo "[$i]=${SNAKE[$i]}" >> debug
+					((i++))
+				done
+				COPY=(${SNAKE[*]:1})
+				unset SNAKE
+				SNAKE=(${COPY[*]})
+				unset COPY
+				echo "After:" >> debug
+				i=0
+				while [ $i -lt ${#SNAKE[*]} ]; do
+					echo "[$i]=${SNAKE[$i]}" >> debug
+					((i++))
+				done
+				((HEAD--))
+			else
+				SNAKE[$TAIL]="$NEW_TAIL"
+			fi
+		fi
 	fi
-	SNAKE[$HEAD]="$NEW_HEAD"
 
 	##print snake
 	if [ "$OLD_TAIL" != "" ]; then
-		tputxy " " $OLD_TAIL
+		tputxy " " $(getxy $OLD_TAIL)
 	fi
-	tputxy "#" $NEW_HEAD
+	tputxy "#" $(getxy $NEW_HEAD)
+
+	#DEBUG
+	tputxy "                             \n" 0 0
+	tputxy "                             \n" 0 1
+	tputxy "                             \n" 0 2
+	tputxy "                             \n" 0 3
+	tputxy "LENGTH=${LENGTH}\n" 0 0
+	echo "TAIL=$TAIL -- HEAD=$HEAD"
+	echo "SNAKE[TAIL]='$(getxy ${SNAKE[$TAIL]})'"
+	echo "SNAKE[HEAD]='$(getxy ${SNAKE[$HEAD]})'"
+	#DEBUG
 done
 
 ######################### unset custom terminal config #########################

@@ -5,18 +5,35 @@ function shift_arr()
 	unset $1[0]
 }
 
+function copy_arr(ARR1, ARR2)
+{
+	LEN=${#ARR1[*]}
+	i=0
+	while [ $i -lt $LEN ]; do
+		ARR2+=("${ARR1[$i]}")
+		((i++))
+	done
+}
+
 LOL[0]="ksfjlsGARBAGElksjflksjf"
 LOL[1]="GOODSTUFF"
-LOL[2]="EVENMOARGOODSTUFF"
-LOL[3]="NOWTHISISKINDABAD"
+LOL[2]="EVENMOAR      GOODSTUFF"
+LOL[3]="NOWTHISISKINDA BAD"
 
 echo -e "LOL list:"
 echo -e "${LOL[*]}\n"
+i=0
+while [ $i -lt ${#LOL[*]} ]; do
+	echo -e "LOL[$i]=${LOL[$i]}"
+	((i++))
+done
 
-COPY=(${LOL[*]:1})
+#COPY=("${LOL[*]:1}")
+declare -a COPY
+copy_arr LOL COPY
 echo -e "\nCOPY (ONLY from first one):\n${COPY[*]}"
 i=0
-while [ $i -lt 4 ]; do
+while [ $i -lt ${#COPY[*]} ]; do
 	echo -e "COPY[$i]=${COPY[$i]}"
 	((i++))
 done
@@ -25,17 +42,18 @@ unset LOL
 echo -e "\nLOL after unset:"
 echo -e ${LOL[*]}
 i=0
-while [ $i -lt 4 ]; do
+while [ $i -lt ${#LOL[*]} ]; do
 	echo -e "LOL[$i]=${LOL[$i]}"
 	((i++))
 done
 
-LOL=(${COPY[*]})
+#LOL=(${COPY[*]})
+copy_arr COPY LOL
 unset COPY
 echo -e "\nafter copy from copy:"
 echo -e ${LOL[*]}
 i=0
-while [ $i -lt 4 ]; do
+while [ $i -lt ${#LOL[*]} ]; do
 	echo -e "LOL[$i]=${LOL[$i]}"
 	((i++))
 done
