@@ -1,0 +1,24 @@
+#!/bin/bash
+
+function shift_params()
+{
+	i=1
+	while [ "$1" != "" ]; do
+		echo -e "\$$i: $1"
+		shift
+		((i++))
+	done
+}
+
+echo "shift 1:"
+shift_params "banana" "orange" "apple"
+
+echo -e "\nshift 2:"
+shift_params "lol"
+
+echo -e "\nscript shift:"
+while [ "$1" != "" ]; do
+	echo -e "\$$i: $1"
+	shift
+	((i++))
+done
