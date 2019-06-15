@@ -182,10 +182,23 @@ while [ 42 ]; do
 		CHERRY="$CHERRY $?"
 		tputxy "*" $CHERRY
 	fi
+	if [ $ADD_BLOCKS -ne 0 ]; then
+		if [ $HEAD -eq $TAIL -o $DIR -ne $OLDIR ]; then
+			SNAKE+=("$NEW_HEAD")
+			((HEAD++))
+		else
+			SNAKE[$HEAD]="$NEW_HEAD"
+		fi
+		((ADD_BLOCKS--))
+		((LENGTH++))
+		OLD_TAIL=""
+	fi
 	SNAKE[$HEAD]="$NEW_HEAD"
 
 	##print snake
-	tputxy " " $OLD_TAIL
+	if [ "$OLD_TAIL" != "" ]; then
+		tputxy " " $OLD_TAIL
+	fi
 	tputxy "#" $NEW_HEAD
 done
 
