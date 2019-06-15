@@ -10,8 +10,32 @@ LOL[1]="GOODSTUFF"
 LOL[2]="EVENMOARGOODSTUFF"
 LOL[3]="NOWTHISISKINDABAD"
 
-echo "before shift:"
-echo ${LOL[*]}
-shift_arr LOL
-echo "after:"
-echo ${LOL[*]}
+echo -e "LOL list:"
+echo -e "${LOL[*]}\n"
+
+COPY=(${LOL[*]:1})
+echo -e "\nCOPY (ONLY from first one):\n${COPY[*]}"
+i=0
+while [ $i -lt 4 ]; do
+	echo -e "COPY[$i]=${COPY[$i]}"
+	((i++))
+done
+
+unset LOL
+echo -e "\nLOL after unset:"
+echo -e ${LOL[*]}
+i=0
+while [ $i -lt 4 ]; do
+	echo -e "LOL[$i]=${LOL[$i]}"
+	((i++))
+done
+
+LOL=(${COPY[*]})
+unset COPY
+echo -e "\nafter copy from copy:"
+echo -e ${LOL[*]}
+i=0
+while [ $i -lt 4 ]; do
+	echo -e "LOL[$i]=${LOL[$i]}"
+	((i++))
+done
