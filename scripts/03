@@ -189,10 +189,15 @@ while [ 42 ]; do
 		((P_X-=2))
 		tputxy "PAUSE" $P_X 0
 		INPUT=""
-		while [ "$INPUT" != "p" ]; do
+		while [ "$INPUT" != "p" -a "$INPUT" != "q" ]; do
 			read -sn1 INPUT
 		done
 		tputxy "     " $P_X 0
+		if [ "$INPUT" == "q" ]; then
+			echo "quitting..."
+			sleep 1
+			break
+		fi
 	fi
 
 	##set direction
