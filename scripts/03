@@ -44,14 +44,14 @@ function tputxy()
 	echo -en "\033[1;1H"
 }
 
-################################## move_block ##################################
+################################### move_head ##################################
 
-function move_block() 
+function move_head() 
 {
-	local BLOCK="$1"
+	local HEAD="$1"
 	local DIRECTION=$2
-	local S_X=$(echo $BLOCK | cut -d\  -f1)
-	local S_Y=$(echo $BLOCK | cut -d\  -f2)
+	local S_X=$(echo $HEAD | cut -d\  -f1)
+	local S_Y=$(echo $HEAD | cut -d\  -f2)
 	case $DIRECTION in
 		$UP)	((S_Y--));;
 		$DOWN)	((S_Y++));;
@@ -61,60 +61,24 @@ function move_block()
 	echo "$S_X $S_Y"
 }
 
-################################## update_tail #################################
+################################## move_tail ###################################
 
-function update_tail()
-{
-#	local TAIL_X=$(echo $1 | cut -d\  -f1)
-	local TAIL_X=$1
-	echo "TAIL_X=$TAIL_X" >> update_tail_out #DEBUG
-#	local TAIL_Y=$(echo $1 | cut -d\  -f2)
-	local TAIL_Y=$2
-	echo "TAIL_Y=$TAIL_Y" >> update_tail_out #DEBUG
-#	local NEXT_X=$(echo $2 | cut -d\  -f1)
-	local NEXT_X=$3
-	echo "NEXT_X=$NEXT_X" >> update_tail_out #DEBUG
-#	local NEXT_Y=$(echo $2 | cut -d\  -f2)
-	local NEXT_Y=$4
-	echo "NEXT_Y=$NEXT_Y" >> update_tail_out  #DEBUG
-	local DIFF_X=$((NEXT_X-TAIL_X))
-	echo "DIFF_X=$DIFF_X" >> update_tail_out #DEBUG
-	local DIFF_Y=$((NEXT_Y-TAIL_Y))
-	echo "DIFF_Y=$DIFF_Y\n" >> update_tail_out #DEBUG
+#function move_tail()
+#{
+	#get current tail
+	#get next block
+	#return new coordinates for current tail
 
-	if [ $DIFF_X -eq 0 ]; then
-		if [ $DIFF_Y -gt 1 ]; then
-			local Y=$((TAIL_Y+1))
-			echo "$TAIL_X $Y"
-		elif [ $DIFF_Y -lt -1 ]; then
-			local Y=$((TAIL_Y-1))
-			echo "$TAIL_X $Y"
-		else
-			echo ""
-		fi
-	elif [ $DIFF_Y -eq 0 ]; then
-		if [ $DIFF_X -gt 1 ];then
-			local X=$((TAIL_X+1))
-			echo "$X $TAIL_Y"
-		elif [ $DIFF_X -lt -1 ]; then
-			local X=$((TAIL_X-1))
-			echo "$X $TAIL_Y"
-		else
-			echo ""
-		fi
-	fi
-}
+	#outside of this, if they are the same as the next block
+	#just delete the old tail
+#}
 
 ################################# collide_test #################################
 
-function collide_test()
-{
-	local SNAKE=$1
-	local X=$2
-	local Y=$3
-
+#function collide_test()
+#{
 	#compare the snake coordinates to X and Y
-}
+#}
 
 ########################### get terminal dimensions ############################
 
@@ -124,8 +88,6 @@ read COLS < tmp
 tput lines > tmp
 read LINES < tmp
 rm tmp
-#echo "Columns: $COLS" #DEBUG
-#echo "Lines: $LINES" #DEBUG
 
 ############################# set game variables ###############################
 
@@ -135,7 +97,7 @@ LEFT=1
 RIGHT=2
 DIR=0
 
-HEAD=-1
+HEAD=0
 TAIL=0
 declare -a SNAKE
 rand_coord $COLS
@@ -143,7 +105,6 @@ SNAKE+=("$?")
 rand_coord $LINES
 SNAKE[$HEAD]="${SNAKE[$HEAD]} $?"
 LENGTH=1
-#echo "SNAKE[$HEAD]=${SNAKE[$HEAD]}" #DEBUG
 ADD_BLOCKS=0
 
 CHERRY="${SNAKE[$HEAD]}"
@@ -153,7 +114,6 @@ while [ "$CHERRY" == "${SNAKE[$HEAD]}" ]; do
 	rand_coord $LINES
 	CHERRY="$CHERRY $?"
 done
-#echo "CHERRY=$CHERRY" #DEBUG
 
 ################################# initiate game ################################
 
@@ -199,6 +159,7 @@ while [ 42 ]; do
 		while [ "$INPUT" != "p" ]; do
 			read -sn1 INPUT
 		done
+		tputxy "     " $P_X 0
 	fi
 
 	##set direction
@@ -210,62 +171,22 @@ while [ 42 ]; do
 	fi
 
 	##move snake
-	NEW_HEAD=$(move_block "${SNAKE[$HEAD]}" $DIR)
+	NEW_HEAD=$(move_head "${SNAKE[$HEAD]}" $DIR)
 	OLD_TAIL="${SNAKE[$TAIL]}"
-	tputxy "SNAKE[HEAD]=$NEW_HEAD" 0 7 #DEBUG
-	tputxy "SNAKE[TAIL]=$NEW_HEAD" 0 8 #DEBUG
 	if [ "$NEW_HEAD" == "$CHERRY" ]; then # check if the snake is on the cherry
-		ADD_BLOCKS=4
+		((ADD_BLOCKS+=4))
 		# TODO: re-generate the CHERRY coordinates while it collides with the snake
 		rand_coord $COLS
 		CHERRY="$?"
 		rand_coord $LINES
 		CHERRY="$CHERRY $?"
-		tputxy "CHERRY=$CHERRY" 0 9 #DEBUG
 		tputxy "*" $CHERRY
 	fi
-	if [ $ADD_BLOCKS -gt 0 ]; then
-		if [ $LENGTH -eq 1 -o $DIR -ne $OLDIR ]; then
-			SNAKE+=("$NEW_HEAD")
-		else
-			SNAKE[$HEAD]="$NEW_HEAD"
-		fi
-		((LENGTH++))
-		((ADD_BLOCKS--))
-		OLD_TAIL=""
-	else
-		if [ $LENGTH -gt 1 ]; then
-			# move the tail
-			NEW_TAIL=$(update_tail ${SNAKE[*]})
-			tputxy "NEW_TAIL=$NEW_TAIL" 0 0
-			if [ "$NEW_TAIL" == "" ]; then
-				unset SNAKE[$TAIL]
-			else
-				SNAKE[$TAIL]="$NEW_TAIL"
-			fi
-		fi
-		if [ $DIR -ne $OLDIR ]; then
-			SNAKE+=("$NEW_HEAD")
-		else
-			SNAKE[$HEAD]="$NEW_HEAD"
-		fi
-	fi
+	SNAKE[$HEAD]="$NEW_HEAD"
 
 	##print snake
-	if [ "$OLD_TAIL" != "" ]; then
-		tputxy " " $OLD_TAIL
-	fi
+	tputxy " " $OLD_TAIL
 	tputxy "#" $NEW_HEAD
-
-	#DEBUG
-	tputxy "LENGTH=$LENGTH" 0 10
-	i=0
-	while [ $i -lt ${#SNAKE[@]} ]; do
-		j=$((i+11))
-		tputxy "SNAKE[$i]=${SNAKE[$i]}" 0 $j
-		((i++))
-	done
-	#DEBUG
 done
 
 ######################### unset custom terminal config #########################
