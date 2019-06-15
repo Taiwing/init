@@ -150,6 +150,41 @@ function collide_test()
 	return 0
 }
 
+############################# wall_collide_test ################################
+
+function wall_collide_test()
+{
+	local X=$(echo $1 | cut -d_ -f1)
+	local Y=$(echo $1 | cut -d_ -f2)
+	local C=$2
+	local L=$3
+
+	if [ $X -eq -1 -o $Y -eq -1 -o $X -eq $C -o $Y -eq $L ]; then
+		return 1
+	fi
+	return 0
+}
+
+######################### print_game_over_screen ###############################
+
+function print_game_over_screen()
+{
+	local C=$1
+	local L=$2
+	local SCORE=$(printf "%07d" $3)
+	tputxy "                    " $((C/2-10)) $((L/2-2))
+	tputxy "     GAME OVER      " $((C/2-10)) $((L/2-1))
+	tputxy "                    " $((C/2-10)) $((L/2))
+	tputxy "   Score: $SCORE   " $((C/2-10)) $((L/2+1))
+	tputxy "                    " $((C/2-10)) $((L/2+2))
+	tputxy " press 'q' to leave " $((C/2-10)) $((L/2+3))
+	tputxy "                     \n" $((C/2-10)) $((L/2+4))
+	local INPUT=""
+	while [ "$INPUT" != "q" ]; do
+		read -sn1 INPUT
+	done
+}
+
 ########################### get terminal dimensions ############################
 
 tput clear
@@ -298,19 +333,14 @@ while [ 42 ]; do
 	fi
 	
 	##check snake collision with itself
-	collide_test "$NEW_HEAD" ${SNAKE[*]:0:$HEAD} "$OLD_HEAD"
-	if [ $? -ne 0 ]; then
-		SCORE=$(printf "%07d" $LENGTH)
-		tputxy "                    " $((COLS/2-10)) $((LINES/2-2))
-		tputxy "     GAME OVER      " $((COLS/2-10)) $((LINES/2-1))
-		tputxy "                    " $((COLS/2-10)) $((LINES/2))
-		tputxy "   Score: $SCORE   " $((COLS/2-10)) $((LINES/2+1))
-		tputxy "                    " $((COLS/2-10)) $((LINES/2+2))
-		tputxy " press 'q' to leave " $((COLS/2-10)) $((LINES/2+3))
-		tputxy "                     \n" $((COLS/2-10)) $((LINES/2+4))
-		while [ "$INPUT" != "q" ]; do
-			read -sn1 INPUT
-		done
+	wall_collide_test "$NEW_HEAD" $COLS $LINES
+	COLLIDE=$?
+	if [ $COLLIDE -eq 0 ]; then
+		collide_test "$NEW_HEAD" ${SNAKE[*]:0:$HEAD} "$OLD_HEAD"
+		COLLIDE=$?
+	fi
+	if [ $COLLIDE -ne 0 ]; then
+		print_game_over_screen $COLS $LINES $LENGTH
 		break
 	fi
 
