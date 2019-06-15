@@ -100,9 +100,6 @@ function move_tail()
 		echo "${X}_${TAIL_Y}"
 	fi
 	#return new coordinates for current tail
-
-	#outside of this, if they are the same as the next block
-	#just delete the old tail
 }
 
 ################################# collide_test #################################
@@ -208,10 +205,9 @@ while [ 42 ]; do
 		DIR=$DIR_INPUT
 	fi
 
-	##move snake
+	##move snake head and check CHERRY pos
 	NEW_HEAD=$(move_head "${SNAKE[$HEAD]}" $DIR)
-	OLD_TAIL="${SNAKE[$TAIL]}"
-	if [ "$NEW_HEAD" == "$CHERRY" ]; then # check if the snake is on the cherry
+	if [ "$NEW_HEAD" == "$CHERRY" ]; then
 		((ADD_BLOCKS+=4))
 		# TODO: re-generate the CHERRY coordinates while it collides with the snake
 		rand_coord $COLS
@@ -220,6 +216,9 @@ while [ 42 ]; do
 		CHERRY="${CHERRY}_${?}"
 		tputxy "*" $(getxy $CHERRY)
 	fi
+
+	##add blocks or move tail
+	OLD_TAIL="${SNAKE[$TAIL]}"
 	if [ $ADD_BLOCKS -ne 0 ]; then
 		if [ $HEAD -eq $TAIL -o $DIR -ne $OLDIR ]; then
 			SNAKE+=("$NEW_HEAD")
