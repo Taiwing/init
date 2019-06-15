@@ -40,8 +40,8 @@ function tputxy()
 	local X=$2
 	((Y++))
 	((X++))
-	echo -en "\e[${Y};${X}H${1}"
-	echo -en "\e[1;1H"
+	echo -en "\033[${Y};${X}H${1}"
+	echo -en "\033[1;1H"
 }
 
 ################################## move_block ##################################
@@ -161,7 +161,7 @@ tputxy "#" ${SNAKE[$HEAD]}
 tputxy "*" $CHERRY
 
 INPUT=""
-escape_char=$(printf "\u1b")
+escape_char=$(printf "\033")
 while [ $DIR -eq 0 ]; do
 	read -sn3 INPUT # get 3 charaters
 	case $INPUT in
