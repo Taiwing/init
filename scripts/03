@@ -16,7 +16,6 @@ function exit_snake()
 	exit 1
 }
 
-
 # TODO: uncomment this when the script is finished
 #SIG=0
 #while [ $SIG -lt 30 ]; do
@@ -247,8 +246,25 @@ while [ 42 ]; do
 		DIR=$DIR_INPUT
 	fi
 
-	##move snake head and check CHERRY position
+	##move snake head and check collision with itself
 	NEW_HEAD=$(move_head "${SNAKE[$HEAD]}" $DIR)
+	collide_test "$NEW_HEAD" ${SNAKE[*]:1}
+	if [ $? -ne 0 ]; then
+		SCORE=$(printf "%07d" $LENGTH)
+		tputxy "                    " $((COLS/2-10)) $((LINES/2-2))
+		tputxy "     GAME OVER      " $((COLS/2-10)) $((LINES/2-1))
+		tputxy "                    " $((COLS/2-10)) $((LINES/2))
+		tputxy "   Score: $SCORE   " $((COLS/2-10)) $((LINES/2+1))
+		tputxy "                    " $((COLS/2-10)) $((LINES/2+2))
+		tputxy " press 'q' to leave " $((COLS/2-10)) $((LINES/2+3))
+		tputxy "                     \n" $((COLS/2-10)) $((LINES/2+4))
+		while [ "$INPUT" != "q" ]; do
+			read -sn1 INPUT
+		done
+		break
+	fi
+
+	##check CHERRY position
 	if [ "$NEW_HEAD" == "$CHERRY" ]; then
 		((ADD_BLOCKS+=4))
 		COLLIDE=1
@@ -312,6 +328,7 @@ while [ 42 ]; do
 	echo "TAIL=$TAIL -- HEAD=$HEAD"
 	echo "SNAKE[TAIL]='$(getxy ${SNAKE[$TAIL]})'"
 	echo "SNAKE[HEAD]='$(getxy ${SNAKE[$HEAD]})'"
+	echo "CHERRY='$(getxy $CHERRY)'"
 	#DEBUG
 done
 
