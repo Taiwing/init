@@ -75,21 +75,13 @@ function move_tail()
 	#get current tail
 	local TAIL_X=$(echo $1 | cut -d_ -f1)
 	local TAIL_Y=$(echo $1 | cut -d_ -f2)
-	echo "SNAKE[TAIL]=$1" >> debug
-	echo "TAIL_X=${TAIL_X}" >> debug
-	echo "TAIL_Y=${TAIL_Y}" >> debug
 	#get next block
 	local NEXT_X=$(echo $2 | cut -d_ -f1)
 	local NEXT_Y=$(echo $2 | cut -d_ -f2)
-	echo "SNAKE[TAIL+1]=$2" >> debug
-	echo "NEXT_X=${NEXT_X}" >> debug
-	echo "NEXT_Y=${NEXT_Y}" >> debug
-
 	#get the direction
 	local DIFF_X=$((NEXT_X-TAIL_X))
 	local DIFF_Y=$((NEXT_Y-TAIL_Y))
-	echo "DIFF_X=${DIFF_X}" >> debug
-	echo "DIFF_Y=${DIFF_Y}" >> debug
+
 	if [ $DIFF_X -eq 0 ]; then
 		Y=$TAIL_Y
 		if [ $DIFF_Y -lt 0 ]; then
@@ -98,7 +90,6 @@ function move_tail()
 			((Y++))
 		fi
 		echo "${TAIL_X}_${Y}"
-		echo "NEW_TAIL=${TAIL_X}_${Y}" >> debug
 	elif [ $DIFF_Y -eq 0 ]; then
 		X=$TAIL_X
 		if [ $DIFF_X -lt 0 ]; then
@@ -107,7 +98,6 @@ function move_tail()
 			((X++))
 		fi
 		echo "${X}_${TAIL_Y}"
-		echo "NEW_TAIL=${X}_${TAIL_Y}" >> debug
 	fi
 	#return new coordinates for current tail
 
@@ -238,12 +228,6 @@ while [ 42 ]; do
 	else
 		if [ $DIR -ne $OLDIR ]; then
 			SNAKE+=("$NEW_HEAD")
-				echo "After +=:" >> debug
-				i=0
-				while [ $i -lt ${#SNAKE[*]} ]; do
-					echo "[$i]=${SNAKE[$i]}" >> debug
-					((i++))
-				done
 			((HEAD++))
 		else
 			SNAKE[$HEAD]="$NEW_HEAD"
@@ -251,25 +235,11 @@ while [ 42 ]; do
 		if [ $HEAD -ne $TAIL ]; then
 			NEW_TAIL=$(move_tail "${SNAKE[$TAIL]}" \
 				"${SNAKE[$NEXT]}")
-			tputxy "                             \n" 0 4 #DEBUG
-			tputxy "NEW_TAIL='$NEW_TAIL'" 0 4 #DEBUG
 			if [ "$NEW_TAIL" == "${SNAKE[$NEXT]}" ]; then
-				echo "Before:" >> debug
-				i=0
-				while [ $i -lt ${#SNAKE[*]} ]; do
-					echo "[$i]=${SNAKE[$i]}" >> debug
-					((i++))
-				done
 				COPY=(${SNAKE[*]:1})
 				unset SNAKE
 				SNAKE=(${COPY[*]})
 				unset COPY
-				echo "After:" >> debug
-				i=0
-				while [ $i -lt ${#SNAKE[*]} ]; do
-					echo "[$i]=${SNAKE[$i]}" >> debug
-					((i++))
-				done
 				((HEAD--))
 			else
 				SNAKE[$TAIL]="$NEW_TAIL"
