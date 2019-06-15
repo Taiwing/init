@@ -104,10 +104,52 @@ function move_tail()
 
 ################################# collide_test #################################
 
-#function collide_test()
-#{
-	#compare the snake coordinates to X and Y
-#}
+##compare the snake coordinates to X and Y
+function collide_test()
+{
+	local X=$(echo $1 | cut -d_ -f1)
+	local Y=$(echo $1 | cut -d_ -f2)
+	local X_Y="$X $Y"
+	shift
+
+	local CUR=""
+	local PREV=""
+	local C_X=0
+	local C_Y=0
+	local P_X=0
+	local P_Y=0
+	while [ "$1" != "" ]; do
+		CUR=$(getxy $1)
+		if [ "$CUR" == "$X_Y" ]; then
+			return 1
+		elif [ "$PREV" != "" ]; then
+			C_X=$(echo $CUR | cut -d\  -f1)
+			C_Y=$(echo $CUR | cut -d\  -f2)
+			P_X=$(echo $PREV | cut -d\  -f1)
+			P_Y=$(echo $PREV | cut -d\  -f2)
+			if [ $X == $C_X -a $C_X == $P_X ]; then
+				if [ $C_Y -lt $P_Y ] && \
+				[ $Y -gt $C_Y -a $Y -lt $P_Y ]; then
+					return 1;
+				elif [ $C_Y -gt $P_Y ] && \
+				[ $Y -lt $C_Y -a $Y -gt $P_Y ]; then
+					return 1;
+				fi
+			elif [ $Y == $C_Y -a $C_Y == $P_Y ]; then
+				if [ $C_X -lt $P_X ] && \
+				[ $X -gt $C_X -a $Y -lt $P_Y ]; then
+					return 1;
+				elif [ $C_X -gt $P_X ] && \
+				[ $X -lt $C_X -a $X -gt $P_X ]; then
+					return 1;
+				fi
+			fi
+		fi
+		PREV="$CUR"
+		shift
+	done
+	return 0
+}
 
 ########################### get terminal dimensions ############################
 
@@ -205,15 +247,19 @@ while [ 42 ]; do
 		DIR=$DIR_INPUT
 	fi
 
-	##move snake head and check CHERRY pos
+	##move snake head and check CHERRY position
 	NEW_HEAD=$(move_head "${SNAKE[$HEAD]}" $DIR)
 	if [ "$NEW_HEAD" == "$CHERRY" ]; then
 		((ADD_BLOCKS+=4))
-		# TODO: re-generate the CHERRY coordinates while it collides with the snake
-		rand_coord $COLS
-		CHERRY="$?"
-		rand_coord $LINES
-		CHERRY="${CHERRY}_${?}"
+		COLLIDE=1
+		while [ $COLLIDE != 0 ]; do
+			rand_coord $COLS
+			CHERRY="$?"
+			rand_coord $LINES
+			CHERRY="${CHERRY}_${?}"
+			collide_test "$CHERRY" ${SNAKE[*]:1} "$NEW_HEAD"
+			COLLIDE=$?
+		done
 		tputxy "*" $(getxy $CHERRY)
 	fi
 
