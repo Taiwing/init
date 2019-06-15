@@ -2,8 +2,8 @@
 
 ############################ set terminal config ###############################
 
-setterm -cursor off	# make the cursor disappear
 stty -echo # make input characters desappear
+tput civis # make the cursor disappear
 
 ############################# signal handling ##################################
 
@@ -11,7 +11,7 @@ function exit_snake()
 {
 	tput clear
 	echo "snake: exiting..."
-	setterm -cursor on
+	tput cnorm
 	stty echo
 	exit 1
 }
@@ -365,5 +365,5 @@ done
 
 ######################### unset custom terminal config #########################
 
-setterm -cursor on	#make the cursor reappear
+tput cnorm #make the cursor reappear
 stty echo #make input characters reappear
