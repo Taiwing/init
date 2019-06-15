@@ -244,20 +244,19 @@ OLDIR=$DIR
 while [ 42 ]; do
 	##get input
 	DIR_INPUT=$DIR
-	read -sn1 -t 0.1 INPUT # get 1 character
-	if [ "$INPUT" == "$escape_char" ]; then
-    	read -sn2 -t 0.0001 INPUT # read 2 more chars
-		case $INPUT in
+	read -sn3 -t 0.03 INPUT # get 3 characters at most
+	if [ "${INPUT:0:1}" == "$escape_char" -a  ${#INPUT} -ge 3 ]; then
+		case ${INPUT:1:2} in
 			'[A') DIR_INPUT=$UP 	;;
 			'[B') DIR_INPUT=$DOWN 	;;
 			'[D') DIR_INPUT=$LEFT 	;;
 			'[C') DIR_INPUT=$RIGHT	;;
 		esac
-	elif [ "$INPUT" == "q" ]; then
+	elif [ "${INPUT:0:1}" == "q" ]; then
 		echo "quitting..."
 		sleep 1
 		break
-	elif [ "$INPUT" == "p" ]; then
+	elif [ "${INPUT:0:1}" == "p" ]; then
 		P_X=$((COLS/2))
 		((P_X-=2))
 		tputxy "PAUSE" $P_X 0
