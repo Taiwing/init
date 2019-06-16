@@ -82,20 +82,12 @@ function move_tail()
 	local DIFF_Y=$((NEXT_Y-TAIL_Y))
 
 	if [ $DIFF_X -eq 0 ]; then
-		Y=$TAIL_Y
-		if [ $DIFF_Y -lt 0 ]; then
-			((Y--))
-		elif [ $DIFF_Y -gt 0 ]; then
-			((Y++))
-		fi
+		Y=$((DIFF_Y < 0 ? TAIL_Y - 1 \
+		: DIFF_Y > 0 ? TAIL_Y + 1 : TAIL_Y))
 		echo "${TAIL_X}_${Y}"
 	elif [ $DIFF_Y -eq 0 ]; then
-		X=$TAIL_X
-		if [ $DIFF_X -lt 0 ]; then
-			((X--))
-		elif [ $DIFF_X -gt 0 ]; then
-			((X++))
-		fi
+		X=$((DIFF_X < 0 ? TAIL_X - 1 \
+		: DIFF_X > 0 ? TAIL_X + 1 : TAIL_X))
 		echo "${X}_${TAIL_Y}"
 	fi
 	#return new coordinates for current tail
@@ -122,24 +114,18 @@ function collide_test()
 		if [ "$CUR" == "$X_Y" ]; then
 			return 1
 		elif [ "$PREV" != "" ]; then
-			C_X=$(echo $CUR | cut -d\  -f1)
-			C_Y=$(echo $CUR | cut -d\  -f2)
-			P_X=$(echo $PREV | cut -d\  -f1)
-			P_Y=$(echo $PREV | cut -d\  -f2)
+			C_X=$(echo "$CUR" | cut -d\  -f1)
+			C_Y=$(echo "$CUR" | cut -d\  -f2)
+			P_X=$(echo "$PREV" | cut -d\  -f1)
+			P_Y=$(echo "$PREV" | cut -d\  -f2)
 			if [ $X == $C_X -a $C_X == $P_X ]; then
-				if [ $C_Y -lt $P_Y ] && \
-				(( Y >= C_Y && Y <= P_Y )); then
-					return 1;
-				elif [ $P_Y -lt $C_Y ] && \
-				(( Y >= P_Y && Y <= C_Y )); then
+				if (( C_Y < P_Y && Y >= C_Y && Y <= P_Y )) || \
+				(( P_Y < C_Y && Y >= P_Y && Y <= C_Y )); then
 					return 1;
 				fi
 			elif [ $Y == $C_Y -a $C_Y == $P_Y ]; then
-				if [ $C_X -lt $P_X ] && \
-				(( X >= C_X && X <= P_X )); then
-					return 1;
-				elif [ $P_X -lt $C_X ] && \
-				(( X >= P_X && X <= C_X )); then
+				if (( C_X < P_X && X >= C_X && X <= P_X )) || \
+				(( P_X < C_X && X >= P_X && X <= C_X )); then
 					return 1;
 				fi
 			fi
