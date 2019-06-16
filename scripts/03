@@ -16,12 +16,11 @@ function exit_snake()
 	exit 1
 }
 
-# TODO: uncomment this when the script is finished
-#SIG=0
-#while [ $SIG -lt 30 ]; do
-#	trap "exit_snake" $SIG
-#	((SIG++))
-#done
+SIG=0
+while [ $SIG -lt 30 ]; do
+	trap "exit_snake" $SIG
+	((SIG++))
+done
 
 ################################### utils ######################################
 
@@ -136,16 +135,23 @@ function collide_test()
 	return 0
 }
 
+########################### get terminal dimensions ############################
+
+tput clear
+tput cols > tmp
+read COLS < tmp
+tput lines > tmp
+read LINES < tmp
+rm tmp
+
 ############################# wall_collide_test ################################
 
 function wall_collide_test()
 {
 	local X=$(echo $1 | cut -d_ -f1)
 	local Y=$(echo $1 | cut -d_ -f2)
-	local C=$2
-	local L=$3
 
-	if [ $X -eq -1 -o $Y -eq -1 -o $X -eq $C -o $Y -eq $L ]; then
+	if [ $X -eq -1 -o $Y -eq -1 -o $X -eq $COLS -o $Y -eq $LINES ]; then
 		return 1
 	fi
 	return 0
@@ -155,31 +161,20 @@ function wall_collide_test()
 
 function print_game_over_screen()
 {
-	local C=$1
-	local L=$2
-	local SCORE=$(printf "%07d" $3)
-	tputxy "                    " $((C/2-10)) $((L/2-6))
-	tputxy "     GAME OVER      " $((C/2-10)) $((L/2-5))
-	tputxy "                    " $((C/2-10)) $((L/2-4))
-	tputxy "   Score: $SCORE   " $((C/2-10)) $((L/2-3))
-	tputxy "                    " $((C/2-10)) $((L/2-2))
-	tputxy " press 'q' to leave " $((C/2-10)) $((L/2-1))
-	tputxy "                     \n" $((C/2-10)) $((L/2))
+	local SCORE=$(printf "%07d" $1)
+	tputxy "                    " $((COLS/2-10)) $((LINES/2-6))
+	tputxy "     GAME OVER      " $((COLS/2-10)) $((LINES/2-5))
+	tputxy "                    " $((COLS/2-10)) $((LINES/2-4))
+	tputxy "   Score: $SCORE   " $((COLS/2-10)) $((LINES/2-3))
+	tputxy "                    " $((COLS/2-10)) $((LINES/2-2))
+	tputxy " press 'q' to leave " $((COLS/2-10)) $((LINES/2-1))
+	tputxy "                     \n" $((COLS/2-10)) $((LINES/2))
 	local INPUT=""
 	while [ "$INPUT" != "q" ]; do
 		read -sn1 INPUT
 	done
 	tput clear
 }
-
-########################### get terminal dimensions ############################
-
-tput clear
-tput cols > tmp
-read COLS < tmp
-tput lines > tmp
-read LINES < tmp
-rm tmp
 
 ############################# set game variables ###############################
 
@@ -266,7 +261,7 @@ escape_char=$(printf "\033")
 while [ $DIR -eq 0 ]; do
 	read -sn3 INPUT # get 3 charaters
 	case $INPUT in
-		"$escape_char[A") DIR=$UP 		;;
+		"$escape_char[A") DIR=$UP 	;;
 		"$escape_char[B") DIR=$DOWN 	;;
 		"$escape_char[D") DIR=$LEFT 	;;
 		"$escape_char[C") DIR=$RIGHT	;;
@@ -274,7 +269,7 @@ while [ $DIR -eq 0 ]; do
 done
 OLDIR=$DIR
 
-################################## input loop ##################################
+################################## game loop ###################################
 
 while [ 42 ]; do
 	##get input
@@ -362,14 +357,14 @@ while [ 42 ]; do
 	fi
 	
 	##check snake collision with itself
-	wall_collide_test "$NEW_HEAD" $COLS $LINES
+	wall_collide_test "$NEW_HEAD"
 	COLLIDE=$?
 	if [ $COLLIDE -eq 0 ]; then
 		collide_test "$NEW_HEAD" ${SNAKE[*]:0:$HEAD} "$OLD_HEAD"
 		COLLIDE=$?
 	fi
 	if [ $COLLIDE -ne 0 ]; then
-		print_game_over_screen $COLS $LINES $LENGTH
+		print_game_over_screen $LENGTH
 		break
 	fi
 
@@ -378,18 +373,6 @@ while [ 42 ]; do
 		tputxy " " $(getxy $OLD_TAIL)
 	fi
 	eval $PRINT_COMMAND
-
-	#DEBUG
-	tputxy "                             \n" 0 0
-	tputxy "                             \n" 0 1
-	tputxy "                             \n" 0 2
-	tputxy "                             \n" 0 3
-	tputxy "LENGTH=${LENGTH}\n" 0 0
-	echo "TAIL=$TAIL -- HEAD=$HEAD"
-	echo "SNAKE[TAIL]='$(getxy ${SNAKE[$TAIL]})'"
-	echo "SNAKE[HEAD]='$(getxy ${SNAKE[$HEAD]})'"
-	echo "CHERRY='$(getxy $CHERRY)'"
-	#DEBUG
 done
 
 ######################### unset custom terminal config #########################
