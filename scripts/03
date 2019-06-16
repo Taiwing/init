@@ -172,17 +172,18 @@ function print_game_over_screen()
 	local C=$1
 	local L=$2
 	local SCORE=$(printf "%07d" $3)
+	tputxy "                    " $((C/2-10)) $((L/2-6))
+	tputxy "     GAME OVER      " $((C/2-10)) $((L/2-5))
+	tputxy "                    " $((C/2-10)) $((L/2-4))
+	tputxy "   Score: $SCORE   " $((C/2-10)) $((L/2-3))
 	tputxy "                    " $((C/2-10)) $((L/2-2))
-	tputxy "     GAME OVER      " $((C/2-10)) $((L/2-1))
-	tputxy "                    " $((C/2-10)) $((L/2))
-	tputxy "   Score: $SCORE   " $((C/2-10)) $((L/2+1))
-	tputxy "                    " $((C/2-10)) $((L/2+2))
-	tputxy " press 'q' to leave " $((C/2-10)) $((L/2+3))
-	tputxy "                     \n" $((C/2-10)) $((L/2+4))
+	tputxy " press 'q' to leave " $((C/2-10)) $((L/2-1))
+	tputxy "                     \n" $((C/2-10)) $((L/2))
 	local INPUT=""
 	while [ "$INPUT" != "q" ]; do
 		read -sn1 INPUT
 	done
+	tput clear
 }
 
 ########################### get terminal dimensions ############################
@@ -253,12 +254,11 @@ while [ 42 ]; do
 			'[C') DIR_INPUT=$RIGHT	;;
 		esac
 	elif [ "${INPUT:0:1}" == "q" ]; then
-		echo "quitting..."
-		sleep 1
+		tput clear
 		break
 	elif [ "${INPUT:0:1}" == "p" ]; then
 		P_X=$((COLS/2))
-		((P_X-=2))
+		((P_X-=3))
 		tputxy "PAUSE" $P_X 0
 		INPUT=""
 		while [ "$INPUT" != "p" -a "$INPUT" != "q" ]; do
@@ -266,8 +266,7 @@ while [ 42 ]; do
 		done
 		tputxy "     " $P_X 0
 		if [ "$INPUT" == "q" ]; then
-			echo "quitting..."
-			sleep 1
+			tput clear
 			break
 		fi
 	fi
