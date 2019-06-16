@@ -222,10 +222,58 @@ while [ "$CHERRY" == "${SNAKE[$HEAD]}" ]; do
 	CHERRY="${CHERRY}_${?}"
 done
 
+############################## choose printing mode ############################
+
+PRINT_COMMAND=""
+CHERRY_CHAR=""
+SNAKE_CHAR=""
+if [ "$TERM" != "linux" -a "$TERM" != "" ]; then
+	PRINT_COMMAND='print_fancy_snake $OLDIR $DIR $OLD_HEAD $NEW_HEAD'
+	CHERRY_CHAR="o"
+	SNAKE_CHAR="\u2584"
+else
+	PRINT_COMMAND='print_raw_snake $NEW_HEAD'
+	CHERRY_CHAR="*"
+	SNAKE_CHAR="#"
+fi
+
+############################### print snake ####################################
+
+function print_fancy_snake()
+{
+	local OLDIR=$1
+	local DIR=$2
+	local OLD_HEAD=$3
+	local NEW_HEAD=$4
+
+	if [ $DIR -lt 0 ]; then
+		tputxy "\033[7m \033[0m" $(getxy $NEW_HEAD)
+	else
+		tputxy "$SNAKE_CHAR" $(getxy $NEW_HEAD)
+	fi
+	if [ $DIR != $OLDIR -a $HEAD -ne $TAIL ]; then
+		if [ $DIR == $UP ]; then
+			tputxy "\033[7m \033[0m" $(getxy $OLD_HEAD)
+		elif [ $OLDIR == $UP ]; then
+			tputxy "$SNAKE_CHAR" $(getxy $OLD_HEAD)
+		fi
+	fi	
+}
+
+function print_meh_snake()
+{
+	tputxy "\033[7m \033[0m" $(getxy $1)
+}
+
+function print_raw_snake()
+{
+	tputxy "$SNAKE_CHAR" $(getxy $1)
+}
+
 ################################# initiate game ################################
 
-tputxy "#" $(getxy ${SNAKE[$HEAD]})
-tputxy "*" $(getxy $CHERRY)
+tputxy "$SNAKE_CHAR" $(getxy ${SNAKE[$HEAD]})
+tputxy "$CHERRY_CHAR" $(getxy $CHERRY)
 
 INPUT=""
 escape_char=$(printf "\033")
@@ -293,7 +341,7 @@ while [ 42 ]; do
 			collide_test "$CHERRY" ${SNAKE[*]} "$NEW_HEAD"
 			COLLIDE=$?
 		done
-		tputxy "*" $(getxy $CHERRY)
+		tputxy "$CHERRY_CHAR" $(getxy $CHERRY)
 	fi
 
 	##add blocks or move tail
@@ -343,24 +391,10 @@ while [ 42 ]; do
 	fi
 
 	##print snake
-	#### TODO: work on print_snake function###
 	if [ "$OLD_TAIL" != "" ]; then
 		tputxy " " $(getxy $OLD_TAIL)
 	fi
-	tputxy "#" $(getxy $NEW_HEAD)
-#	tputxy "\033[7m \033[0m" $(getxy $NEW_HEAD)
-#	if [ $DIR -lt 0 ]; then
-#		tputxy "\033[7m \033[0m" $(getxy $NEW_HEAD)
-#	else
-#		tputxy "\u2584" $(getxy $NEW_HEAD)
-#	fi
-#	if [ $DIR != $OLDIR -a $HEAD -ne $TAIL ]; then
-#		if [ $DIR == $UP ]; then
-#			tputxy "\033[7m \033[0m" $(getxy $OLD_HEAD)
-#		elif [ $OLDIR == $UP ]; then
-#			tputxy "\u2584" $(getxy $OLD_HEAD)
-#		fi
-#	fi
+	eval $PRINT_COMMAND
 
 	#DEBUG
 	tputxy "                             \n" 0 0
