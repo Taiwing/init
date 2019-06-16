@@ -343,10 +343,24 @@ while [ 42 ]; do
 	fi
 
 	##print snake
+	#### TODO: work on print_snake function###
 	if [ "$OLD_TAIL" != "" ]; then
 		tputxy " " $(getxy $OLD_TAIL)
 	fi
 	tputxy "#" $(getxy $NEW_HEAD)
+#	tputxy "\033[7m \033[0m" $(getxy $NEW_HEAD)
+#	if [ $DIR -lt 0 ]; then
+#		tputxy "\033[7m \033[0m" $(getxy $NEW_HEAD)
+#	else
+#		tputxy "\u2584" $(getxy $NEW_HEAD)
+#	fi
+#	if [ $DIR != $OLDIR -a $HEAD -ne $TAIL ]; then
+#		if [ $DIR == $UP ]; then
+#			tputxy "\033[7m \033[0m" $(getxy $OLD_HEAD)
+#		elif [ $OLDIR == $UP ]; then
+#			tputxy "\u2584" $(getxy $OLD_HEAD)
+#		fi
+#	fi
 
 	#DEBUG
 	tputxy "                             \n" 0 0
