@@ -367,10 +367,7 @@ while [ 42 ]; do
 			NEW_TAIL=$(move_tail "${SNAKE[$TAIL]}" \
 				"${SNAKE[$NEXT]}")
 			if [ "$NEW_TAIL" == "${SNAKE[$NEXT]}" ]; then
-				COPY=(${SNAKE[*]:1})
-				unset SNAKE
-				SNAKE=(${COPY[*]})
-				unset COPY
+				SNAKE=(${SNAKE[*]:1})
 				((HEAD--))
 			else
 				SNAKE[$TAIL]="$NEW_TAIL"
