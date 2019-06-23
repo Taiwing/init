@@ -211,53 +211,6 @@ function print_high_score()
 		((Y++))
 	done
 }
-############################# get_player_name #################################
-
-PLAYER=""
-function get_player_name()
-{
-	local X=$((COLS/2-10))
-	local Y=$((LINES/2+4))
-	local INPUT="0"
-	local LEN=0
-
-	tputxy "  enter your name:  " $X $((LINES/2+3))
-	tputxy "     __________     " $X $Y
-	((X += 4))
-	tputxy " " $X $Y
-	((X++))
-	tput cnorm #make the cursor reappear
-	while [ "$INPUT" != "" ]; do
-		read -esn1 INPUT #read input
-		case ${INPUT:0:1} in
-			[!-~])
-				if [ $LEN -lt 10 ]; then
-					tputxy "${INPUT:0:1}" $X $Y
-					((X++))
-					((LEN++))
-					PLAYER="${PLAYER}${INPUT:0:1}"
-				fi
-				;;
-			'\b')
-				if [ $LEN -gt 0 ]; then
-					((X--))
-					tputxy "_" $X $Y
-					echo -en "\033[${Y};${X}H"
-					((LEN--))
-					PLAYER="${PLAYER:0:$LEN}"
-				fi
-				;;
-			'\n'|"")
-				INPUT=""
-				;;
-			*)
-				tputxy "ALIEN!!!" 0 0
-				read -s -t 0.0001 INPUT
-				INPUT="0"
-				;;
-		esac
-	done
-}
 
 ########################### register_new_score #################################
 
@@ -305,6 +258,7 @@ function print_game_over_screen()
 	local SCORE=$(printf "%07d" $1)
 	is_high_score $1
 	local PLACE=$?
+	local PLAYER=""
 
 	tputxy "                    " $((COLS/2-10)) $((LINES/2-6))
 	tputxy "     GAME OVER      " $((COLS/2-10)) $((LINES/2-5))
@@ -337,9 +291,31 @@ function print_game_over_screen()
 		tput clear
 		return
 	fi
-	get_player_name
+	tputxy "  enter your name:  " $((COLS/2-10)) $((LINES/2+3))
+	tputxy "   (10 chars max)   " $((COLS/2-10)) $((LINES/2+4))
+	tput cnorm
+	stty echo
+	while [ 42 ]; do
+		tputxy "                    " $((COLS/2-10)) $((LINES/2+5))
+		tputxy " " $((COLS/2-6)) $((LINES/2+5))
+		PLAYER=""
+		read -en10 PLAYER
+		case "$PLAYER" in
+			*'_'*)
+				tputxy "  invalid char: '_' " $((COLS/2-10)) \
+					$((LINES/2+4))
+				;;
+			*' '*)
+				tputxy "  invalid char: ' ' " $((COLS/2-10)) \
+					$((LINES/2+4))
+				;;
+			*)
+				break
+				;;
+		esac
+	done
 	if [ "$PLAYER" != "" ]; then
-		register_new_score $PLAYER $1 $PLACE
+		register_new_score "$PLAYER" $1 $PLACE
 	fi
 	tput clear
 }
