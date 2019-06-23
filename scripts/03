@@ -205,7 +205,7 @@ function print_high_score()
 	while [ $i -lt $LEN -a $Y -lt $LINES ]; do
 		local PLAYER_LOC=$(echo "${HIGH_SCORE[$i]}" | cut -d_ -f1)
 		local SCORE=$(echo "${HIGH_SCORE[$i]}" | cut -d_ -f2)
-		local STR="$(printf "%-10s   %07d" "$PLAYER_LOC" $SCORE)"
+		local STR="$(printf "%-13s%07d" "$PLAYER_LOC" $SCORE)"
 		tputxy "$STR" $X $Y
 		((i++))
 		((Y++))
