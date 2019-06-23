@@ -297,9 +297,9 @@ function print_game_over_screen()
 	stty echo
 	while [ 42 ]; do
 		tputxy "                    " $((COLS/2-10)) $((LINES/2+5))
-		tputxy " " $((COLS/2-6)) $((LINES/2+5))
+		tputxy " " $((COLS/2-7)) $((LINES/2+5))
 		PLAYER=""
-		read -en10 PLAYER
+		read -p " " -en10 PLAYER
 		case "$PLAYER" in
 			*'_'*)
 				tputxy "  invalid char: '_' " $((COLS/2-10)) \
@@ -349,10 +349,12 @@ done
 
 ############################## choose printing mode ############################
 
+#TODO: let the user choose with an option
+FANCY_MODE=0
 PRINT_COMMAND=""
 CHERRY_CHAR=""
 SNAKE_CHAR=""
-if [ "$TERM" != "linux" -a "$TERM" != "" ]; then
+if [ "$TERM" != "linux" -a "$TERM" != "" -a $FANCY_MODE -ne 0 ]; then
 	PRINT_COMMAND='print_fancy_snake $OLDIR $DIR $OLD_HEAD $NEW_HEAD'
 	CHERRY_CHAR="o"
 	SNAKE_CHAR="\u2584"
