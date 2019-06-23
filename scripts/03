@@ -2,23 +2,24 @@
 
 ############################ set terminal config ###############################
 
+TERM_CONF="$(stty -g)"
 stty -echo # make input characters desappear
 tput civis # make the cursor disappear
 
 ############################# signal handling ##################################
 
-function exit_snake()
+function sigexit_snake()
 {
 	tput clear
 	echo "snake: exiting..."
 	tput cnorm
-	stty echo
+	stty "$TERM_CONF"
 	exit 1
 }
 
-SIG=0
+SIG=1
 while [ $SIG -lt 30 ]; do
-	trap "exit_snake" $SIG
+	trap "sigexit_snake" $SIG
 	((SIG++))
 done
 
@@ -156,23 +157,190 @@ function wall_collide_test()
 	fi
 	return 0
 }
+############################# get highscore ####################################
+
+SCORE_FILE="snake_scores"
+declare -a HIGH_SCORE
+
+## if SCORE_FILE exists and is readable and writable
+if [ -f "$SCORE_FILE" -a -r "$SCORE_FILE" -a -w "$SCORE_FILE" ]; then
+	i=0
+	while [ $i -lt 10 ]; do
+		read -r LINE
+		if [ $? -ne 0 ]; then
+			break
+		fi
+		HIGH_SCORE+=("$LINE")
+		((i++))
+	done < "$SCORE_FILE"
+fi
+
+############################# is_high_score ####################################
+
+function is_high_score()
+{
+	local SCORE=$1
+	local i=${#HIGH_SCORE[*]}
+	local CUR=0
+
+	while [ $i -gt 0 ]; do
+		((i--))
+		CUR=$(echo ${HIGH_SCORE[$i]} | cut -d_ -f2)
+		if [ $CUR -ge $SCORE ]; then
+			((i++))
+			break
+		fi
+	done
+	return $i
+}
+
+############################ print_high_score ##################################
+
+function print_high_score()
+{
+	local i=0
+	local LEN=${#HIGH_SCORE[*]}
+	local X=$((COLS/2-10))
+	local Y=$((LINES/2+6))
+	while [ $i -lt $LEN -a $Y -lt $LINES ]; do
+		local PLAYER_LOC=$(echo "${HIGH_SCORE[$i]}" | cut -d_ -f1)
+		local SCORE=$(echo "${HIGH_SCORE[$i]}" | cut -d_ -f2)
+		local STR="$(printf "%-10s   %07d" "$PLAYER_LOC" $SCORE)"
+		tputxy "$STR" $X $Y
+		((i++))
+		((Y++))
+	done
+}
+############################# get_player_name #################################
+
+PLAYER=""
+function get_player_name()
+{
+	local X=$((COLS/2-10))
+	local Y=$((LINES/2+4))
+	local INPUT="0"
+	local LEN=0
+
+	tputxy "  enter your name:  " $X $((LINES/2+3))
+	tputxy "     __________     " $X $Y
+	((X += 4))
+	tputxy " " $X $Y
+	((X++))
+	tput cnorm #make the cursor reappear
+	while [ "$INPUT" != "" ]; do
+		read -esn1 INPUT #read input
+		case ${INPUT:0:1} in
+			[!-~])
+				if [ $LEN -lt 10 ]; then
+					tputxy "${INPUT:0:1}" $X $Y
+					((X++))
+					((LEN++))
+					PLAYER="${PLAYER}${INPUT:0:1}"
+				fi
+				;;
+			'\b')
+				if [ $LEN -gt 0 ]; then
+					((X--))
+					tputxy "_" $X $Y
+					echo -en "\033[${Y};${X}H"
+					((LEN--))
+					PLAYER="${PLAYER:0:$LEN}"
+				fi
+				;;
+			'\n'|"")
+				INPUT=""
+				;;
+			*)
+				tputxy "ALIEN!!!" 0 0
+				read -s -t 0.0001 INPUT
+				INPUT="0"
+				;;
+		esac
+	done
+}
+
+########################### register_new_score #################################
+
+function register_new_score()
+{
+	local NAME="$1"
+	local SCORE=$2
+	local PLACE=$3
+	local NEW_ENTRY="${NAME}_${SCORE}"
+
+	# if SCORE_FILE exists
+	if [ -f "$SCORE_FILE" ]; then
+		# if it is readable and writable
+		if [ -r "$SCORE_FILE" -a -w "$SCORE_FILE" ]; then
+			local PART_1=""
+			local PART_2=""
+			local LEN=$(wc -l "$SCORE_FILE" | cut -d\  -f1)
+			if [ $PLACE -gt 0 ]; then
+				PART_1=$(head -n $PLACE "$SCORE_FILE")
+			fi
+			if [ $PLACE -lt $LEN ]; then
+				LEN=$((LEN-PLACE))
+				PART_2=$(tail -n $LEN "$SCORE_FILE")
+			fi
+			if [ "$PART_1" != "" ]; then
+				echo "$PART_1" > "$SCORE_FILE"
+				echo "$NEW_ENTRY" >> "$SCORE_FILE"
+			else
+				echo "$NEW_ENTRY" > "$SCORE_FILE"
+			fi
+			if [ "$PART_2" != "" ]; then
+				echo "$PART_2" >> "$SCORE_FILE"
+			fi
+			echo "$(head -n 10 $SCORE_FILE)" > "$SCORE_FILE"
+		fi
+	else
+		echo "$NEW_ENTRY" > "$SCORE_FILE"
+	fi
+}
 
 ######################### print_game_over_screen ###############################
 
 function print_game_over_screen()
 {
 	local SCORE=$(printf "%07d" $1)
+	is_high_score $1
+	local PLACE=$?
+
 	tputxy "                    " $((COLS/2-10)) $((LINES/2-6))
 	tputxy "     GAME OVER      " $((COLS/2-10)) $((LINES/2-5))
 	tputxy "                    " $((COLS/2-10)) $((LINES/2-4))
 	tputxy "   Score: $SCORE   " $((COLS/2-10)) $((LINES/2-3))
 	tputxy "                    " $((COLS/2-10)) $((LINES/2-2))
-	tputxy " press 'q' to leave " $((COLS/2-10)) $((LINES/2-1))
-	tputxy "                     \n" $((COLS/2-10)) $((LINES/2))
-	local INPUT=""
-	while [ "$INPUT" != "q" ]; do
-		read -sn1 INPUT
-	done
+	print_high_score
+	if [ $PLACE -eq 0 ]; then
+		tputxy " CONGRATULATION !!! " $((COLS/2-10)) $((LINES/2-1))
+		tputxy "    You made the    " $((COLS/2-10)) $((LINES/2))
+		tputxy "    best score !    " $((COLS/2-10)) $((LINES/2+1))
+		tputxy "                    " $((COLS/2-10)) $((LINES/2+2))
+	elif [ $PLACE -lt 3 ]; then
+		tputxy " CONGRATULATION !!! " $((COLS/2-10)) $((LINES/2-1))
+		tputxy "   You made it to   " $((COLS/2-10)) $((LINES/2))
+		tputxy "  the  top three !  " $((COLS/2-10)) $((LINES/2+1))
+		tputxy "                    " $((COLS/2-10)) $((LINES/2+2))
+	elif [ $PLACE -le 9 ]; then
+		tputxy " CONGRATULATION !!! " $((COLS/2-10)) $((LINES/2-1))
+		tputxy "   You made it to   " $((COLS/2-10)) $((LINES/2))
+		tputxy "   the  top ten !   " $((COLS/2-10)) $((LINES/2+1))
+		tputxy "                    " $((COLS/2-10)) $((LINES/2+2))
+	elif [ $PLACE -gt 9 ]; then
+		tputxy " press 'q' to leave " $((COLS/2-10)) $((LINES/2-1))
+		tputxy "                    " $((COLS/2-10)) $((LINES/2))
+		local INPUT=""
+		while [ "$INPUT" != "q" ]; do
+			read -sn1 INPUT
+		done
+		tput clear
+		return
+	fi
+	get_player_name
+	if [ "$PLAYER" != "" ]; then
+		register_new_score $PLAYER $1 $PLACE
+	fi
 	tput clear
 }
 
@@ -378,4 +546,4 @@ done
 ######################### unset custom terminal config #########################
 
 tput cnorm #make the cursor reappear
-stty echo #make input characters reappear
+stty "$TERM_CONF"
